@@ -34,7 +34,7 @@ public class SampleTest
     public static WebDriverWait wait;
     
     // API Tokens and necessary URLs
-    private static final String apiToken = System.getenv("TMOBILE_DDEICATED");
+    private static final String apiToken = System.getenv("API_KEY");
     public static final String webDriverUrl = "https://us-mv.headspin.io:3029/v0/"+apiToken+"/wd/hub";
     public static final String API_URL = "https://"+apiToken+"@api-dev.headspin.io";
     public static final String session_endpoint = "/v0/sessions";
@@ -120,7 +120,7 @@ public class SampleTest
         // Label Creation
         HashMap<String, String> label_data_to_send = new HashMap<String, String>();
         label_data_to_send.put("name", "Loading Animation Example");
-        label_data_to_send.put("label_type", "loading-animation-request");
+        label_data_to_send.put("label_type", "page-load-request");
         label_data_to_send.put("ts_start", String.valueOf(test_start));
         label_data_to_send.put("ts_end", String.valueOf(test_end));
 
