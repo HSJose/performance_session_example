@@ -13,8 +13,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
@@ -24,18 +26,17 @@ import org.testng.annotations.Test;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.MobileElement;
 import io.appium.java_client.android.AndroidDriver;
-
-
+import java.util.List;
 
 public class SampleTest
 {   
     // global driver variables
-    private static AppiumDriver<MobileElement> driver = null;
-    public static WebDriverWait wait;
+    private static ThreadLocal<AppiumDriver<MobileElement>> driver = new ThreadLocal<AppiumDriver<MobileElement>>();
+    private WebDriverWait wait;
     
     // API Tokens and necessary URLs
     private static final String apiToken = System.getenv("API_KEY");
-    public static final String webDriverUrl = "https://us-mv.headspin.io:3029/v0/"+apiToken+"/wd/hub";
+    public static final String webDriverUrl = "https://appium-dev.headspin.io:443/v0/"+apiToken+"/wd/hub";
     public static final String API_URL = "https://"+apiToken+"@api-dev.headspin.io";
     public static final String session_endpoint = "/v0/sessions";
     public static final String add_label = "/label/add";
@@ -48,70 +49,73 @@ public class SampleTest
     public static long test_end;
 
     // Desired capabilities
-    public static final String deviceName = "SM-F707U1";
-    public static final String udid = "R3CR10QZA1W";
+    public static final String deviceName = "Android";
     public static final String automationName = "UiAutomator2";
     public static final String platformName = "Android";
     public static final String browserName = "Chrome";
+    public static final String device_type = "device_type:android";
     
+    public static AppiumDriver<MobileElement> getDriver() 
+    {
+        return driver.get();
+    }
+
     @BeforeMethod
     public void setup() throws IOException, InterruptedException
     {
-        System.out.println(apiToken);
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +apiToken);
         DesiredCapabilities caps = new DesiredCapabilities();
 
-        caps.setCapability("deviceName", deviceName);
-        caps.setCapability("udid", udid);
-        caps.setCapability("automationName", automationName);
-        caps.setCapability("platformName", platformName);
+        caps.setCapability("appium:deviceName", deviceName);
+        caps.setCapability("appium:automationName", automationName);
+        caps.setCapability("appium:platformName", platformName);
         caps.setCapability("browserName", browserName);
         caps.setCapability("headspin:capture", true);
-        caps.setCapability("headspin:testName", "Example Using Session API");
+        caps.setCapability("headspin:testName", "Parallel AppiumLB Example");
+        caps.setCapability("headspin:selector", device_type);
+        caps.setCapability("appium:newCommandTimeout", 600);
+        
+        caps.setCapability("autoAcceptAlerts", true);
         
         URL ServiceUrl = new URL(webDriverUrl);
 
-        System.out.println("Starting Driver");
-        driver = new AndroidDriver<MobileElement>(ServiceUrl, caps);
-        System.out.println("Driver started.");
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Starting Driver");
+        driver.set(new AndroidDriver<MobileElement>(ServiceUrl, caps));
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Driver started.");
 
         session_start_time = Instant.now().getEpochSecond();
-        wait = new WebDriverWait(driver, 10);
-        String temp = SendGETRequest(API_URL+session_endpoint+"?num_sessions=1").body();
-
-        ObjectMapper mapper = new ObjectMapper();
-        Sessions sesh = mapper.readValue(temp, Sessions.class);
-
-        session_id = sesh.getSessions().get(0).getSession_id();
-        System.out.println("Session Id: "+session_id);
+        wait = new WebDriverWait(getDriver(), 10);
     }
 
     @Test
     public void Test() throws InterruptedException, IOException
     {   
+        WebDriver current_driver = getDriver();
         /*
-        Use the dynamic loaing example page to run the session analysis
+        Use the dynamic loading example page to run the session analysis
         */
-
+        session_id = ((RemoteWebDriver) current_driver).getSessionId().toString(); //sesh.getSessions().get(0).getSession_id();
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Session Id: "+session_id);
         // Locator Strings
         String StartButtonLocator = "//button[text()=\"Start\"]";
         String HelloWorldLocator = "//div[@id=\"finish\"]";
 
         // Test Steps
-        driver.get("https://the-internet.herokuapp.com/dynamic_loading/2");
+        current_driver.get("https://the-internet.herokuapp.com/dynamic_loading/2");
 
         WebElement startButton = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(StartButtonLocator)));
-        System.out.println("Page Loading");
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Page Loading");
         test_start = Instant.now().getEpochSecond();
         startButton.click();
         
         wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(HelloWorldLocator)));
         test_end = Instant.now().getEpochSecond();
-        System.out.println("Page Loaded");
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Page Loaded");
 
         HashMap<String, String> test_result = new HashMap<String, String>();
         test_result.put("session_id", session_id);
         test_result.put("status", "passed");
-        System.out.println(SendPOSTRequest("https://api-dev.headspin.io/v0/perftests/upload", test_result).body());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +SendPOSTRequest("https://api-dev.headspin.io/v0/perftests/upload", test_result).body());
     }
 
     @AfterMethod
@@ -122,18 +126,18 @@ public class SampleTest
         label_data_to_send.put("name", "Loading Animation Example");
         label_data_to_send.put("label_type", "page-load-request");
         label_data_to_send.put("ts_start", String.valueOf(test_start));
-        label_data_to_send.put("ts_end", String.valueOf(test_end));
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"test start = " + test_start);
+        // label_data_to_send.put("ts_end", String.valueOf(test_end));
+        // System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"test end = " + test_end);
 
-        System.out.println(SendPOSTRequest(API_URL+session_endpoint+"/"+session_id+add_label, label_data_to_send).body());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +SendPOSTRequest(API_URL+session_endpoint+"/"+session_id+add_label, label_data_to_send).body());
 
         // Test Clean Up
-        if(driver != null)
+        if(getDriver() != null)
         {
-            System.out.println("Quitting the driver");
-            driver.quit();
+            System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Quitting the driver");
+            getDriver().quit();
         }
-
-        System.out.println(SendGETRequest(API_URL+session_endpoint+session_analysis_status+session_id).body());
     }
 
     // Serialization helper method
@@ -156,8 +160,8 @@ public class SampleTest
             .header("Accept", "application/json")
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("URL: "+response.uri());
-        System.out.println("Response Code: "+response.statusCode());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"URL: "+response.uri());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Response Code: "+response.statusCode());
         return response;
     }
 
@@ -172,8 +176,8 @@ public class SampleTest
             .GET()
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("URL: "+response.uri());
-        System.out.println("Response Code: "+response.statusCode());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"URL: "+response.uri());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Response Code: "+response.statusCode());
         return response;
     }
 }
