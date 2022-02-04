@@ -26,7 +26,6 @@ import org.testng.annotations.Test;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.MobileElement;
 import io.appium.java_client.android.AndroidDriver;
-import java.util.List;
 
 public class SampleTest
 {   
@@ -35,7 +34,7 @@ public class SampleTest
     private WebDriverWait wait;
     
     // API Tokens and necessary URLs
-    private static final String apiToken = System.getenv("API_KEY");
+    private static final String apiToken = "API KEY";
     public static final String webDriverUrl = "https://appium-dev.headspin.io:443/v0/"+apiToken+"/wd/hub";
     public static final String API_URL = "https://"+apiToken+"@api-dev.headspin.io";
     public static final String session_endpoint = "/v0/sessions";
@@ -71,7 +70,7 @@ public class SampleTest
         caps.setCapability("appium:platformName", platformName);
         caps.setCapability("browserName", browserName);
         caps.setCapability("headspin:capture", true);
-        caps.setCapability("headspin:testName", "Parallel AppiumLB Example");
+        caps.setCapability("headspin:testName", "2_3_22_Demo");
         caps.setCapability("headspin:selector", device_type);
         caps.setCapability("appium:newCommandTimeout", 600);
         
@@ -89,13 +88,21 @@ public class SampleTest
 
     @Test
     public void Test() throws InterruptedException, IOException
-    {   
+    {
         WebDriver current_driver = getDriver();
+
+        // Set Session ID
+        session_id = ((RemoteWebDriver) current_driver).getSessionId().toString(); //sesh.getSessions().get(0).getSession_id();
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Session Id: "+session_id);
+
+        // Session Tags
+        String tags_info = "{\"tags\": [{\"build\": \"1\"},{\"test_type\": \"demo\"}]}";
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +SendPOSTRequest("https://"+apiToken+"@api-dev.headspin.io/v0/sessions/tags/"+session_id, tags_info));
+
         /*
         Use the dynamic loading example page to run the session analysis
         */
-        session_id = ((RemoteWebDriver) current_driver).getSessionId().toString(); //sesh.getSessions().get(0).getSession_id();
-        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Session Id: "+session_id);
+
         // Locator Strings
         String StartButtonLocator = "//button[text()=\"Start\"]";
         String HelloWorldLocator = "//div[@id=\"finish\"]";
@@ -112,6 +119,7 @@ public class SampleTest
         test_end = Instant.now().getEpochSecond();
         System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Page Loaded");
 
+        // Test Result Annotation
         HashMap<String, String> test_result = new HashMap<String, String>();
         test_result.put("session_id", session_id);
         test_result.put("status", "passed");
@@ -121,17 +129,6 @@ public class SampleTest
     @AfterMethod
     public void teardown() throws IOException, InterruptedException
     {
-        // Label Creation
-        HashMap<String, String> label_data_to_send = new HashMap<String, String>();
-        label_data_to_send.put("name", "Loading Animation Example");
-        label_data_to_send.put("label_type", "page-load-request");
-        label_data_to_send.put("ts_start", String.valueOf(test_start));
-        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"test start = " + test_start);
-        // label_data_to_send.put("ts_end", String.valueOf(test_end));
-        // System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"test end = " + test_end);
-
-        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +SendPOSTRequest(API_URL+session_endpoint+"/"+session_id+add_label, label_data_to_send).body());
-
         // Test Clean Up
         if(getDriver() != null)
         {
@@ -156,6 +153,21 @@ public class SampleTest
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(API_URI))
             .POST(HttpRequest.BodyPublishers.ofString(data_object))
+            .header("Authorization", "Bearer "+apiToken)
+            .header("Accept", "application/json")
+            .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"URL: "+response.uri());
+        System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Response Code: "+response.statusCode());
+        return response;
+    }
+
+    public HttpResponse<String> SendPOSTRequest(String API_URI, String data) throws IOException, InterruptedException
+    {   
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(API_URI))
+            .POST(HttpRequest.BodyPublishers.ofString(data))
             .header("Authorization", "Bearer "+apiToken)
             .header("Accept", "application/json")
             .build();
