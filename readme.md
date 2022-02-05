@@ -1,6 +1,6 @@
 # READ ME
 
-### Here is a sample script that show cases the features of the HeadSpin platform. Also serves as an example for parallelizing a script with TestNG.  
+### Here is a sample script that show cases several features of the HeadSpin platform. Also serves as an example for parallelizing a script with TestNG.  
 <br>
 
 #### Appium Load Balancer.
@@ -9,13 +9,17 @@ about specify a particular device and instead define a class or type of device. 
 can be specified by providing the UDID capability. This makes adding the Appium Load Balancer functionality more intuitive.
 - https://ui-dev.headspin.io/docs/appiumlb  
 
-
 #### Session Annotations and Labels.
 This sample contains examples of POST and PATCH requests. These requests are how you can pass in pass/fail status of test as well as custom defined 
 labels and tags. This information can be any <Key, Value> for instance build version information.
 - https://ui-dev.headspin.io/docs/session-api
 - https://ui-dev.headspin.io/docs/session-annotation-api
 - https://ui-dev.headspin.io/docs/annotating-your-session
+
+#### This is a Maven project and uses TestNG
+Please see check the Maven and TestNG documentation for more information
+- https://maven.apache.org/
+- https://testng.org/doc/
 <br>
 <br>
 
