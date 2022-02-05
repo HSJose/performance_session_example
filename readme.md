@@ -5,7 +5,8 @@
 
 #### Appium Load Balancer.
 This is a feature that allow for strategies for choosing a device based on selectors. This makes it simpler to manage tests by not having to worry
-about specify a particular device and instead define a class or type of device. More information available in our documentation.
+about specify a particular device and instead define a class or type of device. More information available in our documentation. Also at any time a device 
+can be specified by providing the UDID capability. This makes adding the Appium Load Balancer functionality more intuitive.
 - https://ui-dev.headspin.io/docs/appiumlb  
 
 
