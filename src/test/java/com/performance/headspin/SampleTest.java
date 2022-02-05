@@ -92,7 +92,7 @@ public class SampleTest
         WebDriver current_driver = getDriver();
 
         // Set Session ID
-        session_id = ((RemoteWebDriver) current_driver).getSessionId().toString(); //sesh.getSessions().get(0).getSession_id();
+        session_id = ((RemoteWebDriver) current_driver).getSessionId().toString();
         System.out.println("Thread : " + Thread.currentThread().getId() + " - " +"Session Id: "+session_id);
 
         // Session Tags
