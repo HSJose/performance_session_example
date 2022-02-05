@@ -70,7 +70,7 @@ public class SampleTest
         caps.setCapability("appium:platformName", platformName);
         caps.setCapability("browserName", browserName);
         caps.setCapability("headspin:capture", true);
-        caps.setCapability("headspin:testName", "2_3_22_Demo");
+        caps.setCapability("headspin:testName", "Test_Demo");
         caps.setCapability("headspin:selector", device_type);
         caps.setCapability("appium:newCommandTimeout", 600);
         
